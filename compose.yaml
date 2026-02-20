@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: postgres-multi
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      # Optional: Set default database (postgres is created by default)
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      # Initialize both databases on first startup
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persist data between container restarts
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-boot-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Database connection settings
+      - SPRING_DATASOURCE_PRIMARY_URL=jdbc:postgresql://db:5432/db_one
+      - SPRING_DATASOURCE_PRIMARY_USERNAME=postgres
+      - SPRING_DATASOURCE_PRIMARY_PASSWORD=root
+      - SPRING_DATASOURCE_SECONDARY_URL=jdbc:postgresql://db:5432/db_two
+      - SPRING_DATASOURCE_SECONDARY_USERNAME=postgres
+      - SPRING_DATASOURCE_SECONDARY_PASSWORD=root
+      # JPA/Hibernate settings
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
