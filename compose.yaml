@@ -1,59 +1,74 @@
-version: '3.8'
 
 services:
-  db:
+  # CONTAINER 1: Primary Database (Teachers)
+  db-primary:
     image: postgres:latest
-    container_name: postgres-multi
+    container_name: postgres-primary
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: postgres
-      # Optional: Set default database (postgres is created by default)
-      POSTGRES_DB: postgres
+      POSTGRES_DB: db_one # Automatically creates the database
     ports:
-      - "5432:5432"
+      - "5431:5432" # Exposed to your machine on 5431
     volumes:
-      # Initialize both databases on first startup
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      # Persist data between container restarts
-      - postgres-data:/var/lib/postgresql/data
+      - ./init-db1.sql:/docker-entrypoint-initdb.d/init.sql
+      - db1-data:/var/lib/postgresql
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d db_one"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
+  # CONTAINER 2: Secondary Database (Students)
+  db-secondary:
+    image: postgres:latest
+    container_name: postgres-secondary
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_DB: db_two # Automatically creates the database
+    ports:
+      - "5432:5432" # Exposed to your machine on 5432
+    volumes:
+      - ./init-db2.sql:/docker-entrypoint-initdb.d/init.sql
+      - db2-data:/var/lib/postgresql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d db_two"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # CONTAINER 3: Your Spring Boot Application
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: spring-boot-app
     ports:
-      - "8080:8080"
+      - "9001:9001"
     environment:
-      # Database connection settings
-      - SPRING_DATASOURCE_PRIMARY_URL=jdbc:postgresql://db:5432/db_one
-      - SPRING_DATASOURCE_PRIMARY_USERNAME=postgres
-      - SPRING_DATASOURCE_PRIMARY_PASSWORD=root
-      - SPRING_DATASOURCE_SECONDARY_URL=jdbc:postgresql://db:5432/db_two
-      - SPRING_DATASOURCE_SECONDARY_USERNAME=postgres
-      - SPRING_DATASOURCE_SECONDARY_PASSWORD=root
-      # JPA/Hibernate settings
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_SHOW_SQL=true
+      # Notice the URLs now point to the separate container names!
+      - DB1_URL=jdbc:postgresql://db-primary:5432/db_one
+      - DB2_URL=jdbc:postgresql://db-secondary:5432/db_two
     depends_on:
-      db:
+      db-primary:
+        condition: service_healthy
+      db-secondary:
         condition: service_healthy
     networks:
       - app-network
-    restart: on-failure
+    restart: unless-stopped
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres-data:
+  db1-data:
+    driver: local
+  db2-data:
     driver: local
