@@ -1,4 +1,4 @@
-package com.multidbdemo.demo.config.secondary;
+package com.multidbdemo.demo.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

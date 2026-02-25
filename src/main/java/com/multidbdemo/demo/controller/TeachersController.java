@@ -1,4 +1,4 @@
-package com.multidbdemo.demo;
+package com.multidbdemo.demo.controller;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-public class PeopleController {
+public class TeachersController {
 
     // Pulling the database URLs from your application.properties
     @Value("${spring.datasource.primary.url}")
