@@ -17,10 +17,10 @@ public class Teachers {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     
-    @Column(name="t_name")
+    @Column(name="name")
     private String name;
     
-    @Column(name="t_role")
-    private String roleNo;
+    @Column(name="role")
+    private String role;
 
 }

@@ -1,4 +1,4 @@
-package com.multidbdemo.demo.service;
+package com.multidbdemo.demo.config; 
 
 import java.util.HashMap;
 
@@ -10,6 +10,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -22,30 +23,35 @@ import jakarta.persistence.EntityManagerFactory;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = {"com.multidbdemo.app.config.secondary"},
-        transactionManagerRef = "secondaryTransactionManager",
-        entityManagerFactoryRef = "secondaryEntityManagerFactory"
+        basePackages = {"com.multidbdemo.demo.repository.primary"}, 
+        transactionManagerRef = "primaryTransactionManager",
+        entityManagerFactoryRef = "primaryEntityManagerFactory"
 )
 @Profile("!test")
-public class SecondaryDbConfig {
+public class PrimaryDbConfig {
 
-    @Bean(name="db2")
-    @ConfigurationProperties(prefix = "spring.seconddatasource")
+    @Bean(name="db1")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.primary") 
     public DataSource dataSource(){
         return DataSourceBuilder.create().build();
     }
 
-    @Bean("secondaryEntityManagerFactory")
-    public LocalContainerEntityManagerFactoryBean getEntityManagerBean(EntityManagerFactoryBuilder builder, @Qualifier("db2") DataSource dataSource){
+    @Bean("primaryEntityManagerFactory")
+    @Primary
+    public LocalContainerEntityManagerFactoryBean getEntityManagerBean(EntityManagerFactoryBuilder builder, @Qualifier("db1") DataSource dataSource){
         HashMap<String,String> prop = new HashMap<>();
         prop.put("hibernate.dialect","org.hibernate.dialect.PostgreSQLDialect");
+        
         return builder.dataSource(dataSource)
                 .properties(prop)
-                .packages("com.multidbdemo.app.config.secondary").build();
+                .packages("com.multidbdemo.demo.model.primary")
+                .build();
     }
 
-    @Bean("secondaryTransactionManager")
-    public PlatformTransactionManager getTransactionManager(@Qualifier("secondaryEntityManagerFactory") EntityManagerFactory factory){
+    @Bean("primaryTransactionManager")
+    @Primary
+    public PlatformTransactionManager getTransactionManager(@Qualifier("primaryEntityManagerFactory") EntityManagerFactory factory){
         return new JpaTransactionManager(factory);
     }
 }

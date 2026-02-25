@@ -1,15 +1,15 @@
 
 services:
-  # CONTAINER 1: Primary Database (Teachers)
+
   db-primary:
     image: postgres:latest
     container_name: postgres-primary
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: postgres
-      POSTGRES_DB: db_one # Automatically creates the database
+      POSTGRES_DB: db_one 
     ports:
-      - "5431:5432" # Exposed to your machine on 5431
+      - "5431:5432" 
     volumes:
       - ./init-db1.sql:/docker-entrypoint-initdb.d/init.sql
       - db1-data:/var/lib/postgresql
@@ -21,16 +21,16 @@ services:
       timeout: 5s
       retries: 5
 
-  # CONTAINER 2: Secondary Database (Students)
+
   db-secondary:
     image: postgres:latest
     container_name: postgres-secondary
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: postgres
-      POSTGRES_DB: db_two # Automatically creates the database
+      POSTGRES_DB: db_two 
     ports:
-      - "5432:5432" # Exposed to your machine on 5432
+      - "5432:5432" 
     volumes:
       - ./init-db2.sql:/docker-entrypoint-initdb.d/init.sql
       - db2-data:/var/lib/postgresql
@@ -42,7 +42,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # CONTAINER 3: Your Spring Boot Application
   app:
     build:
       context: .
@@ -51,7 +50,7 @@ services:
     ports:
       - "9001:9001"
     environment:
-      # Notice the URLs now point to the separate container names!
+
       - DB1_URL=jdbc:postgresql://db-primary:5432/db_one
       - DB2_URL=jdbc:postgresql://db-secondary:5432/db_two
     depends_on:

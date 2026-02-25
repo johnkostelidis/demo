@@ -1,19 +1,11 @@
 package com.multidbdemo.demo.repository;
 
-import org.springframework.stereotype.Component;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import com.multidbdemo.demo.model.Teachers;
 
-@Component
-public class TeachersRepository {
-    private final TeachersRepository teachersRepository;
-
-    public TeachersRepository(TeachersRepository teachersRepository) {
-        this.teachersRepository = teachersRepository;
-    }
-
-    public Teachers save(Teachers teacher){
-        return teachersRepository.save(teacher);
-    }
+@Repository
+public interface TeachersRepository extends JpaRepository<Teachers, Long> {
 
 }
